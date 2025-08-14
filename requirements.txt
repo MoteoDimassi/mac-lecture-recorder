@@ -1,0 +1,7 @@
+typer
+rich
+python-dotenv
+openai
+faster-whisper
+notion-client
+pydub
