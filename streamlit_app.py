@@ -17,7 +17,8 @@ from app import (
     record as app_record, 
     stop as app_stop, 
     transcribe as app_transcribe, 
-    summarize as app_summarize
+    summarize as app_summarize,
+    is_recording
 )
 
 def show_history():
@@ -118,17 +119,33 @@ def main():
             
             if devices_list:
                 mic_options = {f"{name} ({idx})": idx for idx, name in devices_list}
-                sys_options = mic_options.copy()
                 
                 selected_mic = st.selectbox("🎤 Микрофон", list(mic_options.keys()))
-                selected_sys = st.selectbox("🔊 Системный звук", list(sys_options.keys()))
+                
+                # Системный звук всегда записывается с BlackHole 2ch (индекс 3 по умолчанию)
+                # Если BlackHole не найден, используем индекс 0 как fallback
+                blackhole_index = None
+                for idx, name in devices_list:
+                    if "blackhole" in name.lower() or "2ch" in name.lower():
+                        blackhole_index = idx
+                        break
+                
+                if blackhole_index is None:
+                    # Предполагаем, что BlackHole установлен с индексом 3
+                    # или используем первый доступный индекс как fallback
+                    blackhole_index = 3 if len(devices_list) > 3 else 0
+                
+                sys_index = blackhole_index
                 
                 if record_button:
-                    start_recording(mic_options[selected_mic], sys_options[selected_sys], 
+                    start_recording(mic_options[selected_mic], sys_index, 
                                   student_name, lesson_topic)
                 
                 if stop_button:
                     stop_recording()
+                
+                # Показываем информацию о выбранном системном звуке
+                st.info(f"🔊 Системный звук: автоматически выбран индекс {sys_index} (BlackHole)")
             else:
                 st.error("Не удалось получить список аудиоустройств")
                 st.code(ffmpeg_output)
